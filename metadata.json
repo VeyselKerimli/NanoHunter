@@ -1,0 +1,5 @@
+{
+  "name": "NanoHUNTER",
+  "description": "An advanced visual analysis tool that generates optimized prompts for Gemini Nano Banana by analyzing uploaded images and respecting specific preservation constraints (Face, Cloth, Pose, Background).",
+  "requestFramePermissions": []
+}
