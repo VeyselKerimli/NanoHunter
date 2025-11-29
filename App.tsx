@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import UploadZone from './components/UploadZone';
 import PreservationControls from './components/PreservationControls';
@@ -22,6 +22,10 @@ const App: React.FC = () => {
   // History State
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  // Progress State
+  const [progress, setProgress] = useState(0);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Expanded Preservation Options Initialization
   const [preservation, setPreservation] = useState<PreservationOptions>({
@@ -64,6 +68,13 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
+  }, []);
+
   const handleStyleImageSelect = (selectedFile: File) => {
     if (selectedFile.size > 20 * 1024 * 1024) {
         setError("Görsel boyutu çok büyük (Max 20MB).");
@@ -84,6 +95,7 @@ const App: React.FC = () => {
     setError(null);
     setUserPrompt('');
     setNegativePrompt('');
+    setProgress(0);
   };
 
   const togglePreservation = (key: keyof PreservationOptions) => {
@@ -123,11 +135,39 @@ const App: React.FC = () => {
     localStorage.removeItem('nanohunter_history');
   };
 
+  const handleReset = () => {
+    setResult(null);
+    setError(null);
+    setLoadingState(LoadingState.IDLE);
+    setProgress(0);
+  };
+
+  const startProgressSimulation = () => {
+    setProgress(0);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    
+    progressIntervalRef.current = setInterval(() => {
+      setProgress(prev => {
+        // Asymptotic approach to 95%
+        if (prev >= 95) return 95;
+        // Fast at start, slower at end
+        const increment = Math.max(0.5, (95 - prev) / 20); 
+        return prev + increment;
+      });
+    }, 150);
+  };
+
+  const completeProgress = () => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    setProgress(100);
+  };
+
   const handleGenerate = async () => {
     if (!styleFile) return;
 
     setLoadingState(LoadingState.ANALYZING);
     setError(null);
+    startProgressSimulation();
 
     try {
       const response = await generateNanoPrompt(
@@ -139,13 +179,19 @@ const App: React.FC = () => {
           userPrompt, 
           negativePrompt
       );
-      setResult(response);
-      addToHistory(response, styleFile.name);
-      setLoadingState(LoadingState.COMPLETE);
+      completeProgress();
+      // Small delay to let the user see 100%
+      setTimeout(() => {
+        setResult(response);
+        addToHistory(response, styleFile.name);
+        setLoadingState(LoadingState.COMPLETE);
+      }, 500);
+      
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Sistem hatası.");
       setLoadingState(LoadingState.ERROR);
+      setProgress(0);
     }
   };
 
@@ -232,7 +278,7 @@ const App: React.FC = () => {
                 >
                   {loadingState === LoadingState.ANALYZING ? (
                     <>
-                      <Loader2 className="animate-spin" /> SİSTEM İŞLENİYOR...
+                      <Loader2 className="animate-spin" /> İŞLENİYOR %{Math.round(progress)}
                     </>
                   ) : (
                     <>
@@ -264,15 +310,39 @@ const App: React.FC = () => {
                       <div className="absolute inset-8 bg-neon/20 rounded-full animate-pulse"></div>
                    </div>
                    <h3 className="text-xl font-bold text-white mb-2 tracking-widest">SİSTEM İŞLENİYOR</h3>
+                   
+                   {/* Progress Bar */}
+                   <div className="w-64 h-2 bg-void-700 rounded-full mt-2 mb-4 overflow-hidden shadow-inner">
+                      <div 
+                        className="h-full bg-neon shadow-[0_0_10px_theme('colors.neon.DEFAULT')] transition-all duration-200 ease-out"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                   </div>
+
                    <p className="text-neon font-mono text-xs animate-pulse">
                      {subjectType === 'HUMAN' ? 'BİYOMETRİK ANALİZ' : 'YÜZEY & GEOMETRİ ANALİZİ'} AKTİF<br/>
-                     PROTOKOLLER: OPTİMİZE EDİLİYOR...
+                     <span className="opacity-70">
+                       {progress < 30 ? 'Görsel taranıyor...' : 
+                        progress < 60 ? 'Detaylar çıkarılıyor...' : 
+                        progress < 90 ? 'Prompt optimize ediliyor...' : 'Tamamlanıyor...'}
+                     </span>
                    </p>
                 </div>
               )}
 
               {result ? (
-                <PromptDisplay promptEn={result.promptEn} promptTr={result.promptTr} analysis={result.analysis} />
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-neon font-mono text-xs">SONUÇLAR HAZIR</span>
+                    <button 
+                      onClick={handleReset} 
+                      className="text-[10px] text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors bg-void-800 px-2 py-1 rounded border border-void-700"
+                    >
+                      SIFIRLA / TEMİZLE
+                    </button>
+                  </div>
+                  <PromptDisplay promptEn={result.promptEn} promptTr={result.promptTr} analysis={result.analysis} />
+                </>
               ) : (
                 <div className="flex-grow flex flex-col items-center justify-center text-gray-600 space-y-6">
                   <div className="relative group">

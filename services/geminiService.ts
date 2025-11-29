@@ -57,7 +57,7 @@ export const generateNanoPrompt = async (
             - VÜCUT (Body): ${preservation.bodyType ? "Vücut tipini ve anatomiyi koru." : "Standart."}
             - ELLER (Hands): ${preservation.hands ? "El ve parmak pozisyonlarını titizlikle koru." : "Otomatik."}
             - MAKYAJ/YAŞ: ${preservation.makeup ? "Makyaj stilini koru." : ""} ${preservation.age ? "Yaşı koru." : ""}
-            - KIYAFET: ${preservation.clothes ? "Kıyafet detaylarını koru." : ""}
+            - KIYAFET: ${preservation.clothes ? "KIYAFETİ MİKROSKOBİK DÜZEYDE KORU. Kumaş dokusu (ipek, yün, kot vb.), dikiş izleri, katlanmalar, markalar ve genel moda stilini birebir aktar." : ""}
         `;
     } else {
         // --- NESNE / MANZARA MODU ---
@@ -85,7 +85,7 @@ export const generateNanoPrompt = async (
       ${specificInstructions}
 
       ORTAK PROTOKOLLER (Her iki mod için geçerli):
-      - ORTAM: ${preservation.background ? "Arkaplanı koru" : ""} ${preservation.nature ? "Doğayı koru" : ""} ${preservation.architecture ? "Mimariyi koru" : ""}
+      - ORTAM/ARKAPLAN: ${preservation.background ? "ARKAPLANI DETAYLI KORU: Mekan derinliğini, mimari detayları, çevresel objeleri ve atmosferi belirgin hale getir ve koru." : ""} ${preservation.nature ? "Doğayı koru" : ""} ${preservation.architecture ? "Mimariyi koru" : ""}
       - ATMOSFER: ${preservation.lighting ? "Işıklandırmayı koru" : ""} ${preservation.colors ? "Renkleri koru" : ""} ${preservation.mood ? "Ruh halini koru" : ""}
       - TEKNİK: ${preservation.cameraAngle ? "Açıyı koru" : ""} ${preservation.depthOfField ? "Odak/Blur koru" : ""} ${preservation.lens ? "Lens mm koru" : ""}
       
@@ -95,7 +95,7 @@ export const generateNanoPrompt = async (
 
       GÖREV:
       1. Görseli seçilen moda göre (İnsan veya Nesne) analiz et.
-      2. Korunması istenen (TRUE olan) özellikleri detaylıca betimle.
+      2. Korunması istenen (TRUE olan) özellikleri detaylıca betimle. Kıyafet ve Arkaplan isteniyorsa çok spesifik detay ver.
       3. Nano Banana için optimize edilmiş İngilizce (promptEn) ve Türkçe (promptTr) prompt oluştur.
       4. Teknik terimler kullan (Cinematic lighting, Octane render, 8k textures vb.).
 
